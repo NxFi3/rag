@@ -34,9 +34,9 @@ except Exception as e:
 
 
 
-def save_memory(data: np.ndarray, memory_id: uuid.UUID, metadata: dict = None):
+def add_to_memory(data: np.ndarray, memory_id: uuid.UUID, metadata: dict = None):
     """
-    ذخیره یک حافظه در FAISS index
+    Save To FAISS index
     
     Args:
         data: embedding shape (1,dim)
@@ -138,13 +138,12 @@ if __name__ == "__main__":
     
     metadata = {
         "text": "Python is a high-level language",
-        "type": "semantic",
         "importance": 0.8,
         "timestamp": time.time()
     }
     
     memory_id = uuid.uuid4()
-    save_memory(test_emb, memory_id, metadata)
+    add_to_memory(test_emb, memory_id, metadata)
     
     # ذخیره دائمی
     persist_memory()
@@ -154,3 +153,4 @@ if __name__ == "__main__":
     for r in results:
         print(f"Score: {r['score']:.4f} - {r['metadata']['text']}")
     
+load_persisted_memory()
