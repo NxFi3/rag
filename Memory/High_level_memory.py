@@ -82,7 +82,7 @@ def Search_memory(query):
                             if emb_value is None:
                                 continue
                             emb_value = emb_value.reshape(1, -1).astype(np.float32)
-                            faiss.normalize_L2(emb_value)
+                     
                             
                             D, I = LTM_index[mem_type].search(emb_value, k=3)
                             
@@ -156,5 +156,3 @@ def Save_memory(STM, User_inputs, Model_outputs=None):
     
     return STM
 
-load_memory_from_disk()
-logger.info("HIGH_level Memory ready")

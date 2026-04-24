@@ -1,4 +1,5 @@
 from Utils.logger import get_logger
+from core.generator import GeneratorManager
 import faiss
 import numpy as np
 import uuid
@@ -31,7 +32,7 @@ try:
 except Exception as e:
     logger.error(f"Unexpected error: {e}")
     raise
-
+generator = GeneratorManager()
 
 
 def add_to_memory(data: np.ndarray, memory_id: uuid.UUID, metadata: dict = None):
@@ -67,14 +68,17 @@ def add_to_memory(data: np.ndarray, memory_id: uuid.UUID, metadata: dict = None)
 
 
 
-def search_memory(query_embedding: np.ndarray, k: int = 5):
+def search_memory(Query: str, k: int = 5):
     try:
         if index.ntotal == 0:
             logger.warning("Index is empty")
             return [], []
-        
+        query_embedding = generator.Encode(Query)
+        if query_embedding is None:
+            logger.error("Encoding failed")
+            return [], []
         if query_embedding.ndim == 1:
-            query_embedding = query_embedding.reshape(1, -1)
+            query_embedding = query_embedding.reshape(1, -1).astype(np.float32)
         
         scores, indices = index.search(query_embedding, k)
         
@@ -130,27 +134,3 @@ def load_persisted_memory():
         logger.error(f"Error loading persisted memory: {e}")
         return False
 
-
-# ========== مثال استفاده ==========
-if __name__ == "__main__":
-    test_emb = np.random.random((1, DIM)).astype('float32')
-    faiss.normalize_L2(test_emb)
-    
-    metadata = {
-        "text": "Python is a high-level language",
-        "importance": 0.8,
-        "timestamp": time.time()
-    }
-    
-    memory_id = uuid.uuid4()
-    add_to_memory(test_emb, memory_id, metadata)
-    
-    # ذخیره دائمی
-    persist_memory()
-    
-    # جستجو
-    results, scores = search_memory(test_emb, k=3)
-    for r in results:
-        print(f"Score: {r['score']:.4f} - {r['metadata']['text']}")
-    
-load_persisted_memory()
