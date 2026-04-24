@@ -7,7 +7,7 @@ import numpy as np
 logger = get_logger("GNR")
 logger.info("GENERATOR started")
 
-class Generator:
+class GeneratorManager:
     def __init__(self, Model_Name: str = 'llama3.1:8B', Encoder_name: str = 'all-MiniLM-L6-v2'):
         """SentenceTransformers ONLY for Encoder"""
         self.model_name = Model_Name
@@ -17,7 +17,7 @@ class Generator:
             logger.info(f"Loading Model : {self.model_name}")
         except Exception as e:
             logger.error(f"unexpected Error : {e}")
-            raise  # بهتره خطا رو بندازی بالا تا caller بفهمه چی شده
+            raise  
 
     def generator(self, prompt: str, temperature: float = 0.7, max_new_tokens: int = 200, do_sample: bool = False):
         try:
@@ -59,5 +59,5 @@ class Generator:
             return encoded
         except Exception as e:
             logger.error(f"unexpected Error: {e}")
-            # برگردوندن یه embedding صفر به جای ndarray خالی
-            return np.zeros(384)  # فرض می‌کنم 384 بعدی هست
+            
+            return np.zeros(384)  

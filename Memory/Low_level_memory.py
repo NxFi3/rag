@@ -6,7 +6,7 @@ import os
 import pickle
 
 logger = get_logger("LOWMEM")
-logger.info("LOW_LEVEL Memory Startup")
+logger.info("LOW_LEVEL Memory Started")
 
 
 DIM = 384  
@@ -39,9 +39,9 @@ def save_memory(data: np.ndarray, memory_id: uuid.UUID, metadata: dict = None):
     ذخیره یک حافظه در FAISS index
     
     Args:
-        data: embedding با شکل (1, DIM)
-        memory_id: شناسه یکتا
-        metadata: اطلاعات اضافی (متن، نوع، اهمیت، و غیره)
+        data: embedding shape (1,dim)
+        memory_id:UUID
+        metadata: Information Non Embedding
     """
     try:
         
