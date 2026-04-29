@@ -65,7 +65,8 @@ def Save_memory_prompt(query):
 You are a memory extraction system. Extract ONLY factual, useful information for future conversations.
 
 RULES:
-- Extract ONLY: name, age, job, interests, skills, definitions, concepts, how-to, past events
+- Extract: name, age, job, interests, skills, definitions, concepts, how-to, past events
+- Extract: user naming the AI (e.g., "i name you X", "your name is X", "i call you X")
 - IGNORE: greetings (hi, hello, nice to meet you), meta comments, questions, short phrases
 - Minimum 3 words per extracted value
 
@@ -74,6 +75,8 @@ If nothing: {{"Memory": [], "value": []}}
 
 Examples:
 Input: "my name is alireza" → {{"Memory": ["identity"], "value": ["my name is alireza"]}}
+Input: "i name you diana" → {{"Memory": ["identity"], "value": ["AI's name is diana"]}}
+Input: "your name is sarah" → {{"Memory": ["identity"], "value": ["AI's name is sarah"]}}
 Input: "nice to meet you" → {{"Memory": [], "value": []}}
 Input: "I love Python" → {{"Memory": ["emotional"], "value": ["I love Python"]}}
 Input: "how to install PyTorch" → {{"Memory": ["procedural"], "value": ["install PyTorch"]}}

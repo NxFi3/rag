@@ -8,7 +8,7 @@ logger = get_logger("GNR")
 logger.info("GENERATOR started")
 
 class GeneratorManager:
-    def __init__(self, Model_Name: str = 'llama3.1:8B', Encoder_name: str = "D:\SentenceTransformer Model"): # iran the land of dedifficulty
+    def __init__(self, Model_Name: str = 'llama3.1:8B', Encoder_name: str = "E:\Multilingual-e5-base"): # iran the land of dedifficulty
         """SentenceTransformers ONLY for Encoder"""
         self.model_name = Model_Name
         try:

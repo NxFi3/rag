@@ -22,7 +22,7 @@ LTM_index = {
 }
 LTM_text = {}
 
-generator = GeneratorManager('llama3.1:8B', "D:/SentenceTransformer Model")
+generator = GeneratorManager()
 parser = ParserManager()
 
 def save_memory_to_disk():
