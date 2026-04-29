@@ -19,7 +19,7 @@ Previous conversation:
 {context['stm']}
 
 Relevant memories:
-{context['ltm']}
+{chr(10).join([f"- {m}" for m in context['ltm']])}
 
 User: {user_input}
 Assistant:"""

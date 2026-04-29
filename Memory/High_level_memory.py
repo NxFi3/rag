@@ -171,7 +171,7 @@ def Save_memory(STM, User_inputs, Model_outputs=None):
                     continue
                 
                 emb = emb.reshape(1, -1).astype(np.float32)
-                faiss.normalize_L2(emb)
+                
                 
             
                 importance = 0.6  #solid
