@@ -9,11 +9,12 @@ class Agent:
         self.memory.load_all()
     
     def chat(self, user_input: str) -> str:
-        # 1. گرفتن حافظه مرتبط
+    
         context = self.memory.get_relevant_memory(user_input)
         
-        # 2. ساخت prompt
+    
         prompt = f"""
+You Are Diana a helpful AI assistant.
 Previous conversation:
 {context['stm']}
 
@@ -23,10 +24,10 @@ Relevant memories:
 User: {user_input}
 Assistant:"""
         
-        # 3. تولید پاسخ
+    
         response = self.generator.generator(prompt)
         
-        # 4. ذخیره در حافظه
+
         self.memory.add_interaction(user_input, response)
         
         return "AI: "+response
@@ -34,7 +35,6 @@ Assistant:"""
     def save(self):
         self.memory.save_all()
 
-# استفاده
 agent = Agent()
 while True:
     inputs = input("You: ")
