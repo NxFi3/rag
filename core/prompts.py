@@ -62,25 +62,50 @@ Output (JSON only, no extra text):
 
 def Save_memory_prompt(query):
     prompt = f"""
-You are a memory extraction system. Extract ONLY factual, useful information.
+You are a memory extraction system. Extract ONLY factual information.
 
-RULES:
-- Extract: name, age, job, interests, skills, definitions, how-to, past events
-- Extract: user naming the AI (e.g., "i name you X", "your name is X")
-- IGNORE: greetings (hi, hello, nice to meet you), meta comments, questions
-- Minimum 3 words per extracted value
+ABSOLUTE RULES (NEVER BREAK):
+1. NEVER extract questions (anything with "?", "what", "how", "why", "when", "who", "where")
+2. NEVER extract commands or requests ("help me", "can you", "tell me", "do this")
+3. NEVER extract meta comments about memory or testing
+4. ONLY extract when user shares NEW information about themselves or the world
 
-Output format: {{"Memory": ["identity/emotional/procedural/semantic/episodic"], "value": ["complete phrase"]}}
-If nothing important: {{"Memory": [], "value": []}}
+REQUIRED PATTERNS (only extract these):
+- "my name is X"
+- "i am X years old"  
+- "i love/hate X"
+- "i am building/working on X"
+- "X stands for Y"
+- "yesterday/last week i did X"
+- "your name is X"
 
-Examples:
-"my name is X" → {{"Memory": ["identity"], "value": ["my name is X"]}}
-"i love AI" → {{"Memory": ["emotional"], "value": ["i love AI"]}}
-"i am building a RAG" → {{"Memory": ["procedural"], "value": ["i am building a RAG"]}}
-"yesterday i worked 5 hours" → {{"Memory": ["episodic"], "value": ["yesterday i worked 5 hours"]}}
-"RAG stands for retrieval generation" → {{"Memory": ["semantic"], "value": ["RAG stands for retrieval generation"]}}
-"nice to meet you" → {{"Memory": [], "value": []}}
+FORBIDDEN PATTERNS (NEVER extract):
+- Any sentence with "?" at the end
+- Starting with: what, how, why, when, where, who, can, could, would, should, do, does, is, are
+- Containing: test, remember, memory, help, assist, can you, tell me, show me
 
-Now: {query}
+Output format: {{"Memory": ["type"], "value": ["exact phrase"]}}
+If nothing to extract: {{"Memory": [], "value": []}}
+
+EXAMPLES:
+✅ "my name is alireza" → {{"Memory": ["identity"], "value": ["my name is alireza"]}}
+✅ "i hate math exams" → {{"Memory": ["emotional"], "value": ["i hate math exams"]}}
+✅ "i am building a RAG system" → {{"Memory": ["procedural"], "value": ["i am building a RAG system"]}}
+✅ "RAG stands for retrieval generation" → {{"Memory": ["semantic"], "value": ["RAG stands for retrieval generation"]}}
+✅ "yesterday i worked 5 hours" → {{"Memory": ["episodic"], "value": ["yesterday i worked 5 hours"]}}
+
+❌ "what is your name?" → {{"Memory": [], "value": []}}
+❌ "can you help me?" → {{"Memory": [], "value": []}}
+❌ "i want to test memory" → {{"Memory": [], "value": []}}
+❌ "do you remember me?" → {{"Memory": [], "value": []}}
+❌ "tell me about X" → {{"Memory": [], "value": []}}
+
+NOW PROCESS: {query}
+
+REMEMBER: If it's a question, request, or test, return EMPTY. Only extract REAL information.
 """
+    return prompt
+
+def ImageProcessPrompt():
+    prompt = "Explain What you see in Image completely with all details."
     return prompt

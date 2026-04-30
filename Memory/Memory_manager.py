@@ -9,8 +9,6 @@ import time
 logger = get_logger("MEM")
 logger.info("MemoryManager started")
 
-
-
 class MemoryManager:
     def __init__(self,gen, STM_SIZE: int = 15):  
         self.gen = gen
