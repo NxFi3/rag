@@ -35,8 +35,8 @@ st.markdown("""
 
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    st.title("🧠 NeuroMem")
-    st.caption("AI Assistant with Long-Term Memory | Your AI remembers you!")
+    st.title("RAG system")
+    st.caption("Your AI remembers you!")
 
 st.divider()
 
@@ -136,7 +136,7 @@ try:
         st.session_state.agent = init_agent()
         st.session_state.messages = []
         
-        welcome_msg = "Hello! 👋 I'm your AI assistant with **long-term memory**. I remember facts about you across conversations!\n\nAsk me anything or tell me about yourself. For example:\n- *My name is Alireza*\n- *I'm allergic to penicillin*\n- *I love programming*"
+        welcome_msg = "Hello! 👋 I'm your AI assistant. I remember facts about you across conversations!\n\nAsk me anything or tell me about yourself. For example:\n- *My name is X*\n- *I'm allergic to penicillin*\n- *I love programming*"
         st.session_state.messages.append({"role": "assistant", "content": welcome_msg})
 
     with memory_stats:

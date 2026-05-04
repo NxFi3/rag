@@ -1,28 +1,66 @@
 from Utils.logger import get_logger
+from piper import PiperVoice
+from sentence_transformers import SentenceTransformer
 import requests
 import ollama
-from sentence_transformers import SentenceTransformer
+import sounddevice as sd
 import numpy as np
-
+import json
+import whisper
 logger = get_logger("GNR")
 logger.info("GENERATOR started")
-DIM = 768
+
+logger.info("loading Config ...")
+
+
+
+
+
 class GeneratorManager:
-    def __init__(self, Model_Name: str = 'llama3.1:8B', Encoder_name: str = "E:\Multilingual-e5-base"): 
-        """SentenceTransformers ONLY for Encoder"""
-        self.model_name = Model_Name
+    def __init__(self,Config:dict,MultiModal:bool=False): 
+        """SentenceTransformers ONLY for Encoder
+           TTS Piper-tts ONLY
+           FOR TTS and STT need MultiModal=True
+        """
+        self._readConfig(Config)
+        self._loadModels(MultiModal)
+    def _readConfig(self, Config:dict):
         try:
-            logger.info("loading ENCODER")
-            self.encoder = SentenceTransformer(Encoder_name)
-            logger.info(f"Loading Model : {self.model_name}")
+
+            with open(Config, 'r', encoding='utf-8') as f:
+                Config = json.load(f)
         except Exception as e:
-            logger.error(f"unexpected Error : {e}")
-            raise  
+            logger.error(f"Error Invalid Config {e}")
+            exit()
+
+        self.LLMName = Config['LLM']
+        self.encoderName = Config['encoder']
+        self.ttsName = Config['TTS']
+        self.whisperName = Config['Whisper']
+        
+    def _loadModels(self,multimodal:bool):
+        try: 
+            logger.info("LLM Requested.")
+            logger.info(f"loading Encoder {self.encoderName}")
+            self.encoder = SentenceTransformer(self.encoderName)
+            self.DIM = self.encoder.get_embedding_dimension()
+            if multimodal:
+                logger.info("MultiModal Triggered.")
+
+                logger.info("Loading TTS model")
+                self.tts = PiperVoice.load(self.ttsName['model'],self.ttsName['config'])
+                logger.info(f"loading WHISPER {self.whisperName}")
+                self.whisper = whisper.load_model(self.whisperName)
+                logger.info("ALL MODEL LOADED.")
+        except Exception as e:
+            logger.error(f"Something Went Wrong {e}")
+            exit()
+
 
     def generator(self, prompt: str, temperature: float = 0.7, max_new_tokens: int = 200, do_sample: bool = False):
         try:
             logger.info('sending Generation Request to ollama')
-            res = ollama.generate(model= self.model_name,prompt = prompt,stream=False,
+            res = ollama.generate(model= self.LLMName,prompt = prompt,stream=False,
                     options= {
                         "temperature": temperature if do_sample else 1.0,
                         "num_predict": max_new_tokens,
@@ -45,4 +83,41 @@ class GeneratorManager:
         except Exception as e:
             logger.error(f"unexpected Error: {e}")
             
-            return np.zeros(DIM)  
+            return np.zeros(self.DIM) 
+
+    def speech(self,text:str,Block:bool=True):
+        """ONLY work when MultiModal is True"""
+        logger.info(f"generating Speech For Query: {text}  ||||")
+        if not text or not text.strip():
+            logger.info("SPEECH GENERATION STOPPED BAD QUERY.")
+            return False
+        audio_chunks = []
+        try:
+            for chunk in self.tts.synthesize(text):
+                audio_chunks.append(chunk.audio_float_array)
+            if not audio_chunks:
+                return False
+            AudioData = np.concatenate(audio_chunks)
+            SampleRate = self.tts.config.sample_rate
+            if Block:
+                sd.play(AudioData,SampleRate)
+                sd.wait()
+            else:
+                sd.play(AudioData,SampleRate,blocking=False)
+
+            return True
+        except Exception as e:
+            logger.error(f"SPEECH ... Error While Generation or Speaking {e}")
+            return False
+        
+    def STOPSPEECH(self):
+        """ONLY work when MultiModal is True"""
+        try:
+            sd.stop()
+            return True
+        except Exception as e:
+            logger.error(f"SPEECH STOP ERROR {e}")
+            return False
+                
+    def Listening(self):
+        pass

@@ -7,7 +7,7 @@ from core.prompts import MainPrompt
 class Agent:
     def __init__(self, gen):
         self.gen = gen
-        self.memory = MemoryManager(STM_SIZE=15, gen=self.gen)
+        self.memory = MemoryManager(STM_SIZE=15, gen=self.gen,EmbeddingDIM=self.gen.DIM)
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.memory.load_all()
     

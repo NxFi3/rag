@@ -13,6 +13,7 @@ CRITICAL RULES:
 8. If user asks about how to do something → procedural Memory
 9. Do NOT invent Memory TYPE
 10. OUTPUT ONLY in English
+11. ONLY semantic emotional identity procedural episodic code IS ALLOWED as Memory
 Memory TYPE DETECTION:
 - identity: questions about "me", "my", "name", "age", "job", "live", "born", "I am"
 - semantic: questions about "what is", "definition", "concept", "meaning of"
@@ -29,26 +30,27 @@ Query: "what is my name?"
 Output: {{"Memory": ["identity"], "value": ["my name"]}}
 
 Query: "what is RAG?"
-Output: {{"Memory": ["semantic"], "value": ["RAG definition"]}}
+Output: {{"Memory": ["semantic"], "value": ["RAG"]}}
 
 Query: "do you remember what I like?"
 Output: {{"Memory": ["identity", "emotional"], "value": ["what I like", "my preferences"]}}
 
 Query: "what did we talk about yesterday?"
-Output: {{"Memory": ["episodic"], "value": ["yesterday conversation", "previous discussion"]}}
+Output: {{"Memory": ["episodic"], "value": ["yesterday conversation"]}}
 
 Query: "how do I install PyTorch?"
-Output: {{"Memory": ["procedural"], "value": ["install PyTorch", "how to install PyTorch"]}}
+Output: {{"Memory": ["procedural"], "value": ["install PyTorch"]}}
 
 Query: "tell me about my interests and what I love"
 Output: {{"Memory": ["identity", "emotional"], "value": ["my interests", "what I love"]}}
 
 Query: "what is my name and how old am I?"
-Output: {{"Memory": ["identity"], "value": ["my name", "my age"]}}
+Output: {{"Memory": ["identity"], "value": ["my name age"]}}
 
 Query: "do you remember my job and where I live?"
-Output: {{"Memory": ["identity"], "value": ["my job", "where I live"]}}
-
+Output: {{"Memory": ["identity"], "value": ["my job where I live"]}}
+Query: "name"
+Output: {{"Memory":["identity"],"value": ["name"]}}
 IMPORTANT REMINDERS:
 - Return MULTIPLE types if the question asks about different things
 - Each Query value should be a SEARCHABLE phrase
@@ -71,6 +73,7 @@ ABSOLUTE RULES (NEVER BREAK):
 3. NEVER extract meta comments about memory or testing
 4. ONLY extract when user shares NEW information about themselves or the world
 5. OUTPUT ONLY in English
+6. ONLY semantic emotional identity procedural episodic code IS ALLOWED as Memory
 REQUIRED PATTERNS (only extract these):
 - "my name is X"
 - "i am X years old"  
@@ -90,6 +93,7 @@ If nothing to extract: {{"Memory": [], "value": []}}
 DO NOT return any explanation, only JSON output.
 Outpput MUST BE ONE JSON.
 EXAMPLES:
+✅ "the capital of france is paris" → {{"Memory":["semantic"],"value":["capital of france is paris"]}}
 ✅ "my name is ali" → {{"Memory": ["identity"], "value": ["my name is ali"]}}
 ✅ "i hate math exams" → {{"Memory": ["emotional"], "value": ["i hate math exams"]}}
 ✅ "i am building a RAG system" → {{"Memory": ["procedural"], "value": ["i am building a RAG system"]}}
@@ -126,4 +130,14 @@ User:
 
 """
     
+    return prompt
+
+def SearchEval(query,Predicted):
+    prompt = f"""Context answer the Query or Not if not return meaningful.
+    Query:
+    {query}
+    Context:
+    {Predicted}
+    OutPut:
+    """
     return prompt

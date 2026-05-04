@@ -5,33 +5,38 @@ import numpy as np
 import uuid
 import os
 import pickle
-
 logger = get_logger("LOWMEM")
 logger.info("LOW_LEVEL Memory Started")
-
-
-DIM = 768  
 INDEX_FILE = "memory_index.faiss"
 DATA_FILE = "memory_data.pkl"
 
-try:
-    if os.path.exists(INDEX_FILE) and os.path.exists(DATA_FILE):
-        
-        logger.info("Loading existing index...")
-        index = faiss.read_index(INDEX_FILE)
-        with open(DATA_FILE, "rb") as f:
-            memory_data = pickle.load(f)
-        logger.info(f"Loaded {index.ntotal} memories")
-    else:
-        
-        logger.info("Creating new memory index...")
-        index = faiss.IndexFlatIP(DIM)  # Inner Product (Cosine Similarity)
-        memory_data = {}  
-        logger.info(f"New index created with dimension {DIM}")
-        
-except Exception as e:
-    logger.error(f"Unexpected error: {e}")
-    raise
+
+DIM = 768
+index = None
+memory_data = {}
+
+def EmbeddingDIMLOW(dim: int = 768):
+    global DIM, index, memory_data
+    DIM = dim
+    
+    INDEX_FILE = "memory_index.faiss"
+    DATA_FILE = "memory_data.pkl"
+    
+    try:
+        if os.path.exists(INDEX_FILE) and os.path.exists(DATA_FILE):
+            logger.info("Loading existing index...")
+            index = faiss.read_index(INDEX_FILE)
+            with open(DATA_FILE, "rb") as f:
+                memory_data = pickle.load(f)
+            logger.info(f"Loaded {index.ntotal} memories")
+        else:
+            logger.info("Creating new memory index...")
+            index = faiss.IndexFlatIP(DIM)  
+            memory_data = {}
+            logger.info(f"New index created with dimension {DIM}")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise
 def Save_search(Query:np.ndarray):
     try:
        

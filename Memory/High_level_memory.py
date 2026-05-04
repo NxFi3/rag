@@ -7,19 +7,29 @@ import pickle
 import os
 from core.prompts import Save_memory_prompt , Search_memory_prompt
 
-logger = get_logger("HIGH_level Memory started")
+logger = get_logger("HIGH_level")
 
 DIM = 768
 
-LTM_index = {
-    'identity': faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
-    "semantic": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
-    "episodic": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
-    "procedural": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
-    "emotional": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
-    "code": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)) # dont work yet?
-}
+LTM_index = {}
 LTM_text = {}
+
+def EmbeddingDIMHIGH(dim: int = 768):
+    global DIM, LTM_index
+    DIM = dim
+    
+
+    LTM_index.clear()  
+    LTM_index.update({
+        'identity': faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
+        "semantic": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
+        "episodic": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
+        "procedural": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
+        "emotional": faiss.IndexIDMap(faiss.IndexFlatIP(DIM)),
+        "code": faiss.IndexIDMap(faiss.IndexFlatIP(DIM))
+    })
+    logger.info(f"✅ HIGH-LEVEL Memory initialized with DIM={DIM}")
+
 
 parser = ParserManager()
 
@@ -53,17 +63,23 @@ def load_memory_from_disk():
         logger.error(f"Load failed: {e}")
 
 def Save_Search(gen, mem_type, query):
-
     try:
         emb = gen.Encode(query)
         if emb is None:
             return False  
+      
+        emb = emb / (np.linalg.norm(emb) + 1e-8)
         
         emb_value = emb.reshape(1, -1).astype(np.float32)
         D, I = LTM_index[mem_type].search(emb_value, k=1)
         
-       
-        if I[0][0] != -1 and D[0][0] >= 0.85:  
+ 
+        if D[0][0] < -1e10:
+            logger.warning(f"Weird score detected: {D[0][0]}, saving anyway")
+            return True
+        
+        threshold = 0.88 if mem_type == "identity" else 0.98
+        if I[0][0] != -1 and D[0][0] >= threshold:  
             logger.info(f"Duplicate detected for '{query[:50]}...' (score: {D[0][0]:.3f})")
             return False  
         else:
@@ -73,8 +89,11 @@ def Save_Search(gen, mem_type, query):
         logger.error(f"Error in Save_Search: {e}")
         return True 
 
-
-def Search_memory(query, gen):
+def Search_memory(query, gen, previous_results=None):
+    """
+    search with support for multiple different answers
+    previous_results: list of already returned answers to avoid duplicates
+    """
     search_result = []
     
     if len(query) >= 4:
@@ -88,7 +107,6 @@ def Search_memory(query, gen):
             query_values = extracted_query.get('Query', [])
             
             if memory_types and query_values:
-               
                 for mem_type, value in zip(memory_types, query_values):
                     if mem_type not in LTM_index:
                         continue
@@ -97,54 +115,76 @@ def Search_memory(query, gen):
                         emb_value = gen.Encode(value)
                         if emb_value is None:
                             continue
+                        
+             
                         emb_value = emb_value.reshape(1, -1).astype(np.float32)
                         
-                        D, I = LTM_index[mem_type].search(emb_value, k=3)
+                        D, I = LTM_index[mem_type].search(emb_value, k=10)
                         
                         for idx, ids in enumerate(I[0]):
                             if ids != -1 and ids in LTM_text:
                                 item = LTM_text[ids]
+                                score = float(D[0][idx])
+                                
+                          
+                                if previous_results and item.Value in previous_results:
+                                    score = score * 0.3
+                                
                                 search_result.append({
                                     'ID': item.ID,
                                     'text': item.Value,
-                                    'score': float(D[0][idx]) if len(D[0]) > idx else 0
+                                    'score': score
                                 })
                     except Exception as e:
                         logger.error(f"Error encoding: {e}")
                         continue
     
-    seen = set()
+
+    seen_text = set()
     unique = []
     for r in search_result:
-        if r['ID'] not in seen:
-            seen.add(r['ID'])
+        if r['text'] not in seen_text:
+            seen_text.add(r['text'])
             unique.append(r)
     
     sorted_results = sorted(unique, key=lambda x: x['score'], reverse=True)
     
     if sorted_results:
-        best = sorted_results[0]
-        LTM_text[best['ID']].update()
-        return [x['text'] for x in sorted_results[:3]]
+
+        if previous_results:
+            filtered = [x for x in sorted_results if x['text'] not in previous_results]
+            if filtered:
+                sorted_results = filtered
+        
+
+        for i in range(min(3, len(sorted_results))):
+            LTM_text[sorted_results[i]['ID']].update()
+        
+        return [x['text'] for x in sorted_results[:5]]
     else:
         return []
     
 def Save_memory(STM, User_inputs, gen, Model_outputs=None):
-    STM_context = f"Previous_User:{User_inputs}\nPrevious_model:{Model_outputs}"
-    STM.append(STM_context)
-    
     user_input_clean = User_inputs.strip()
     
+
     if user_input_clean.endswith('?') or user_input_clean.startswith('?'):
         logger.info("Question detected, skipping save to LTM")
+        STM.append(f"User: {User_inputs}")
         return STM
     
-    if len(user_input_clean) < 15:
+    if len(user_input_clean) < 5:
         logger.info("Input too short, skipping save to LTM")
+        STM.append(f"User: {User_inputs}")
         return STM
     
     logger.info("Input passed filters, processing for LTM storage")
-    
+
+    if Model_outputs:
+        STM.append(f"User: {User_inputs}\nAI: {Model_outputs}")
+    else:
+        STM.append(f"User: {User_inputs}")
+
     if Model_outputs:
         query = f"{User_inputs}\n{Model_outputs}"
     else:
@@ -184,7 +224,7 @@ def Save_memory(STM, User_inputs, gen, Model_outputs=None):
             emb = gen.Encode(Value)
             if emb is None:
                 continue
-            
+
             emb = emb.reshape(1, -1).astype(np.float32)
             
             importance = 0.6
@@ -199,7 +239,6 @@ def Save_memory(STM, User_inputs, gen, Model_outputs=None):
             logger.error(f"Error saving memory: {e}")
             continue
 
-    
     if saved_count > 0:
         logger.info(f"Saved {saved_count} memories to LTM")
     else:
